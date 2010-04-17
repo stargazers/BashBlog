@@ -84,18 +84,16 @@ create_current_page()
 			# Echo Blog header
 			echo '<h2 class="blogtext_header">'
 			head -n 1 $cur
+			echo "<br>"
+			echo '<span class="blogtext_header_date">'
+			echo $cur | awk -F '-' '{print $3"."$2"."$1" - "$4":"$5}'
+			echo '</span>'
 			echo '</h2>'
 
 			# Replace \n stuff with <br> for html with awk
 			# and print all lines except first (what is Blog header!)
 			echo '<div class="blogtext">'
 			awk '{if( NR > 2 ) printf "%s<br>", $0} END {print ""}' $cur
-
-			echo '<hr>'
-			echo '<span>'
-			echo "Written "
-			echo $cur | awk -F '-' '{print $3"."$2"."$1", "$4":"$5}'
-			echo '</span>'
 			echo '</div>'
 		fi
 	done
@@ -127,7 +125,7 @@ create_page_end()
 	echo '<hr>'
 	echo 'This site uses Bash Blog what is licensed under GNU AGPL.<br>'
 	echo 'Source codes of Bash Blog is available at <a href="'$URL'">'$URL'</a>'
-	echo '<br>Author: Aleksi Räsänen &lt;aleksi.rasanen@runosydan.net&gt;'
+	echo '<br>Author: Aleksi Räsänen &lt;<a href="mailto:aleksi.rasanen@runosydan.net">aleksi.rasanen@runosydan.net</a>&gt;'
 	echo '</div>'
 	echo '</body>'
 	echo '</html>'
