@@ -1,0 +1,59 @@
+body
+{
+	background-color: white;
+	width: 60%;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.menu
+{
+	width: 90%;
+	margin-left: auto;
+	margin-right: auto;
+	text-align: center;
+}
+
+.menu a:link, .menu a:visited
+{
+	margin-left: 40px;
+	text-decoration: none;
+	color: black;
+}
+
+.menu a:hover
+{
+	text-decoration: underline;
+	color: red;
+}
+
+.blogtext_header
+{
+	font-variant: small-caps;
+	margin-top: 50px;
+}
+
+.blogtext
+{
+	font-family: "Arial", Georia, Sans-Serif;
+	margin-left: 40px;
+}
+
+.blogtext span
+{
+
+}
+
+.code
+{
+	background-color: #CCFFCC;
+	font-family: "Courier";
+	padding: 7px;
+}
+
+#footer
+{
+	margin-top: 40px;
+	font-size: 70%;
+	padding-bottom: 20px;
+}
