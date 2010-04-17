@@ -1,0 +1,82 @@
+BashBlog
+=========
+
+	About
+	======
+
+		BashBlog is very simple blog generator written with bash.
+
+		It does not use any kind of database engines, only plain
+		text files. It does generate sub pages when you just create them
+		and add blogtitle.txt file inside that folder. All text files (except
+		that blogtitle.txt) will be listed in that sub page as a blog text.
+
+		BashBlog does not have any kind of web UI because it is meant
+		to use with just any text editor. So, there is no any kind of
+		admin panels and that kind of bells and whistles. You just login
+		to your shell, go to correct directory, open your editor of choice
+		and create a new textfile with correct filename. Then you just write
+		it and save it an it will appear on your site. Easy, huh?
+
+		You can sort easily your subpages in order you want just renaming
+		those folders. Eg. 01-main, 05-someother, 10-thirdpage.
+		If you just want to change 05-someother page to the right side of
+		a 10-thirdpage, you just mv 05-someother to 15-thirdpage or
+		whatever way you prefer - pages are added in alphabetical order.
+
+		Files (eg. blog texts) are sorted in reverse order, so the newest
+		blogtexts will be shown first.
+
+		Subpage creating is also made easily - all folders what have a
+		file blogtitle.txt file will be shown in top menu as a subpage.
+		That should be easy enough, right?
+
+	Installation
+	=============
+
+		Copy source codes of BashBlog + CSS-file in somewhere where your
+		web server can run .cgi files. Then create main folder and create
+		a blogtitle.txt under it.
+
+			cd path/where/server/can/use/bashblog
+			mkdir 01-main
+			echo "My superious blog" > 01-main/blogtitle.txt
+
+		If you want to change HTML page title, then you create blogtitle.txt
+		also in your BashBlog path and just type whatever you wish your
+		HTML page title should be.
+
+		Then when you have 01-main folder, just create new blog text
+		like this way (I prefer VIM, change to whatever you like).
+
+			vim 01-main/$(date +%Y-%m-%d-%H-%M-%S).txt
+
+		Then just write your blog entry. First line is the blogtext
+		"topic line", second line is empty and then just just write
+		your blogtext. And yeah, surely you can use html codes inside it.
+
+		After you have written your blogtext, just quit your editor
+		of choice and refresh your page in browser and you should see
+		your just written blog text on your page.
+
+		TIP: It will be much easier to create some script what will 
+		     automatially do that $(date) stuff for you. 
+			 For example create file blog_new and give it permissions
+			 to run (chmod +x). Then in that blog_new you just call
+			 VIM or whatever with correct filename. After you have made
+			 sure that your blog_new script is in path what can be found
+			 on enviroment variable $PATH, then you just go to correct dir,
+			 for example 01-main and type blog_new and enter. Then you cannot
+			 make wrong filename accidentally.
+
+	License
+	========
+	
+		BashBlog is licensed uner GNU AGPL.
+
+	Contact
+	========
+
+		You can contact me via email to address
+		aleksi.rasanen@runosydan.net
+
