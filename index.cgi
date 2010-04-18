@@ -32,6 +32,18 @@ ITEMS_PER_PAGE=5
 # By default we start browsing from first page.
 PAGE_NUM=1
 
+# You need Flickr API-key to use feature what will get images
+# directly from Flickr to this blog.
+FLICKR_API_KEY=$(if [ -f flickr_api_key.txt ]; then cat flickr_api_key.txt; fi)
+
+# If Flickr API is set, then we get images directly from Flickr and not
+# just add them as an URL.
+if [ "$FLICKR_API_KEY" != "" ]; then
+	SHOW_FLICKR_IMAGES="true"
+else
+	SHOW_FLICKR_IMAGES="false"
+fi
+
 # Create normal HTML, HEAD and so on.
 create_main()
 {
@@ -132,7 +144,47 @@ create_current_page()
 			# Replace \n stuff with <br> for html with awk
 			# and print all lines except first (what is Blog header!)
 			echo '<div class="blogtext">'
-			awk '{if( NR > 2 ) printf "%s<br>", $0} END {print ""}' $cur
+
+			# Check if there is flickr URLs and
+			# SHOW_FLICKR_IMAGES variable is true
+			if [ "$SHOW_FLICKR_IMAGES" == "true" ]; then
+
+				# Try to search if there is http://www.flickr.com URL
+				# in the beginning of the line. If there is, then
+				# this is the line where we get FLICKFLICKR_URL variable
+				FLICKR_URL=`cat $cur | grep "^http://www.flickr.com/"`
+
+				# If FLICKR_URL was found, then we do Flickr API call
+				# and then get the URL of Medium-sized image.
+				if [ "$FLICKR_URL" != "" ]; then
+					IMG_URL=$(basename $FLICKR_URL)
+					echo '<a href="'$FLICKR_URL'">'
+					echo '<img src="'
+					curl -s "http://api.flickr.com/services/rest/?method=flickr.photos.getSizes&api_key=$FLICKR_API_KEY&photo_id=$IMG_URL" | grep "Medium" | awk -F '"' '{print $8}'
+					echo '" class="flickr_images"></a>'
+				fi
+
+				# First we use awk to remove first two lines, replace 
+				# \n to <br> and remove lines what starts with 
+				# url http://www.flickr.com/
+				TEXT=$(awk '{if( NR > 2 ) if( $0 !~ "^http://www.flickr.com/" ) printf "%s<br>", $0} END  {print ""}' $cur)
+
+				# With sed we make links from all URLs.
+				echo $TEXT | sed -e "s|http[:]//[^ ]*|<a href=\"\0\">\0</a>|g" 
+
+			# SHOW_FLICKR_IMAGES is false, so just show possible flicrk URLS
+			# like we do show normal URLs.
+			else
+				# Note! We add space before <br> because if user has added
+				# Flikr URLs on own line, they propably do not have space
+				# in the end and the next sed line will do not understand them
+				# correctly, eg. next word will be also a part of a link!
+				TEXT=$(awk '{if( NR > 2 ) printf "%s <br>", $0} END  {print ""}' $cur)
+
+				# With sed we make links from all URLs.
+				echo $TEXT | sed -e "s|http[:]//[^ ]*|<a href=\"\0\">\0</a>|g" 
+			fi
+
 			echo '</div>'
 		fi
 

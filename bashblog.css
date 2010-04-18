@@ -83,3 +83,14 @@ body
 	color: red;
 	text-decoration: underline;
 }
+
+img.flickr_images
+{
+	margin-bottom: 20px;
+	border-style: none;
+}
+
+.flickr_images a:link, a:visited
+{
+	border: 0px;
+}
