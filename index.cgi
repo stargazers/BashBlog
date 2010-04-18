@@ -158,10 +158,12 @@ create_current_page()
 				# and then get the URL of Medium-sized image.
 				if [ "$FLICKR_URL" != "" ]; then
 					IMG_URL=$(basename $FLICKR_URL)
+					echo '<div class="flickr_images">'
 					echo '<a href="'$FLICKR_URL'">'
 					echo '<img src="'
 					curl -s "http://api.flickr.com/services/rest/?method=flickr.photos.getSizes&api_key=$FLICKR_API_KEY&photo_id=$IMG_URL" | grep "Medium" | awk -F '"' '{print $8}'
-					echo '" class="flickr_images"></a>'
+					echo '" alt="'$IMG_URL'"></A>'
+					echo '</div>'
 				fi
 
 				# First we use awk to remove first two lines, replace 
