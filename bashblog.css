@@ -63,3 +63,23 @@ body
 	font-size: 70%;
 	padding-bottom: 20px;
 }
+
+.page_browsing_area 	
+{
+	margin-top: 40px;
+	width: 100%;
+	text-align: center;
+}
+
+.page_browsing_area a:link, a:visited
+{
+	text-decoration: none;
+	color: black;
+	margin-left: 40px;
+}
+
+.page_browsing_area a:hover
+{
+	color: red;
+	text-decoration: underline;
+}

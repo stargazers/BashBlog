@@ -26,6 +26,12 @@ TITLE_FILE=blogtitle.txt
 # GET-parameter given (that will be checked later on code!)
 CURRENT_PAGE=01-main/
 
+# How many blogtexts should be on one page?
+ITEMS_PER_PAGE=5
+
+# By default we start browsing from first page.
+PAGE_NUM=1
+
 # Create normal HTML, HEAD and so on.
 create_main()
 {
@@ -75,11 +81,44 @@ create_current_page()
 {
 	# Get all files from this folder
 	cd $CURRENT_PAGE
-	PAGES=$(\ls -tR *.txt)
+	PAGES=$(\ls -r *.txt)
+
+	# How many blogtexts we have added to this page 
+	var_added_texts=0
+
+	# How many blogtext there is total?
+	num_total=0
+
+	# Count number of total blogtexts.
+	for cur in $PAGES
+	do
+		let num_total=$num_total+1
+	done
+	
+	# Remove one from total blogtexts, because one is blogtitle.txt
+	let num_total=$num_total-1
+
+	# Temporary counter
+	i=0
+
+	# Calculate what will be the first blogtext to show.
+	let var_first_to_show=$ITEMS_PER_PAGE*$PAGE_NUM
+	let var_first_to_show=$var_first_to_show-$ITEMS_PER_PAGE
+	let var_first_to_show=$var_first_to_show+1
 
 	for cur in $PAGES
 	do
+		let i=$i+1
+
+		# If temporary counter is NOT greater than index number
+		# of first element what we should show, then we just jump
+		# in the beginning of loop, so we do not show all blogtexts.
+		if [ ! "$i" -gt "$var_first_to_show" ]; then
+			continue;
+		fi
+
 		if [ $cur != "$TITLE_FILE" ]; then
+			let var_added_texts=$var_added_texts+1
 
 			# Echo Blog header
 			echo '<h2 class="blogtext_header">'
@@ -96,7 +135,45 @@ create_current_page()
 			awk '{if( NR > 2 ) printf "%s<br>", $0} END {print ""}' $cur
 			echo '</div>'
 		fi
+
+		# If we have added already enough blogtexts to this page,
+		# then we quit this while loop just now.
+		if [ "$var_added_texts" == "$ITEMS_PER_PAGE" ]; then
+			break
+		fi
 	done
+
+	# If no blogtexts are found, yet, then we show No pages -information.
+	# This surely happens if user put manually on URL ?page=1234
+	# or something like that, and if there is no enough blogtexts.
+	if [ "$var_added_texts" == 0 ]; then
+		echo '<h2 class="blogtext_header">'
+		echo 'No pages'
+		echo '</h2>'
+		echo '<div class="blogtext">'
+		echo 'This page does not contain any blogtext yet.'
+		echo '</div>'
+	fi
+
+	echo '<div class="page_browsing_area">'
+
+	# Should we give link "Previous"?
+	if [ "$PAGE_NUM" -gt 1 ]; then
+		let previous_page=$PAGE_NUM-1
+		echo '<a href="'$0'?page='$CURRENT_PAGE'&page_num='$previous_page'">'
+		echo '&lt;&lt;&lt Previous'
+	fi
+
+    let i=$num_total-$var_first_to_show
+
+	# Should we give link "Next"?
+	if [ "$i" == "$ITEMS_PER_PAGE" ] || [ "$i" -gt "$ITEMS_PER_PAGE" ]; then
+		let next_page=$PAGE_NUM+1
+		echo '<a href="'$0'?page='$CURRENT_PAGE'&page_num='$next_page'">'
+		echo 'Next &gt;&gt;&gt;</a>'
+	fi
+
+	echo '</div>'
 }
 
 # Read current page to variable from GET-parameter
@@ -104,12 +181,20 @@ get_current_page()
 {
 	QUERY_STRING=$(/usr/bin/env | grep QUERY_STRING)
 	TMP_PAGE=$(echo "$QUERY_STRING" | sed -n 's/^.*page=\([^&]*\).*$/\1/p' | sed "s/%20/ /g")
+	TMP_PAGE_NUM=$(echo "$QUERY_STRING" | sed -n 's/^.*page_num=\([^&]*\).*$/\1/p' | sed "s/%20/ /g")
 
 	# Overwrite variable CURRENT_PAGE only if TMP_PAGE is not empty.
 	# So, if there is no GET-variables, we use default what is defined
 	# in the beginning of this script.
 	if [ "$TMP_PAGE" != "" ]; then
 		CURRENT_PAGE=$TMP_PAGE
+	fi
+
+	# If there is GET-value page_num, then we use it
+	# and overwrite default value what is defined in the beginning 
+	# of this script.
+	if [ "$TMP_PAGE_NUM" != "" ]; then
+		PAGE_NUM=$TMP_PAGE_NUM
 	fi
 
 	# Remove ../../../ and that kind of stuff from filename
