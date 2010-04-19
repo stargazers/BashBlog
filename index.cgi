@@ -141,44 +141,81 @@ create_current_page()
 			echo '</span>'
 			echo '</h2>'
 
-			# Replace \n stuff with <br> for html with awk
-			# and print all lines except first (what is Blog header!)
 			echo '<div class="blogtext">'
 
-			# Check if there is flickr URLs and
-			# SHOW_FLICKR_IMAGES variable is true
+			# If $SHOW_FLICKR_IMAGES is true, then we must check if
+			# there is lines where we have links to Flickr.
+			# Those lines are used ONLY if they are beginning of the line.
 			if [ "$SHOW_FLICKR_IMAGES" == "true" ]; then
 
-				# Try to search if there is http://www.flickr.com URL
-				# in the beginning of the line. If there is, then
-				# this is the line where we get FLICKFLICKR_URL variable
+				# Try to search this blogtext if there is any lines
+				# what starts with http://www.flickr.com/ and if there
+				# is any, then add them to $FLICKR_URL
 				FLICKR_URL=`cat $cur | grep "^http://www.flickr.com/"`
 
-				# If FLICKR_URL was found, then we do Flickr API call
-				# and then get the URL of Medium-sized image.
+				# Here we read blogtext into the variable $TEXT.
+				# We read whole file, except first two. This is because
+				# in first line we have blogtext title, and second should
+				# be empty. If you do not like it that way, then just 
+				# change it the way you feel.
+				TEXT=$(cat $cur | awk '{ if( NR > 2 ) printf "%s<br>", $0 } END { print "" }')
+
+				# If there was any links to Flickr-images, then we have
+				# something in $FLICKR_URL variable. Good. 
 				if [ "$FLICKR_URL" != "" ]; then
-					IMG_URL=$(basename $FLICKR_URL)
-					echo '<div class="flickr_images">'
-					echo '<a href="'$FLICKR_URL'">'
-					echo '<img src="'
-					curl -s "http://api.flickr.com/services/rest/?method=flickr.photos.getSizes&api_key=$FLICKR_API_KEY&photo_id=$IMG_URL" | grep "Medium" | awk -F '"' '{print $8}'
-					echo '" alt="'$IMG_URL'"></A>'
-					echo '</div>'
+
+					# Now we loop through all found Flickr URLs.
+					for TMP_URL in $FLICKR_URL
+					do
+						# Get imge number from URL. For example, links are
+						# like http://www.flickr.com/user/12345 so we need
+						# to get that 12345 and that can be easily done
+						# with command basename.
+						IMG_URL=$(basename $TMP_URL)
+
+						# Here we call Flickr API call flickr.photos.getSize
+						# so we can get an URL of an image.
+						# First we call that API call, then we grep line
+						# Medium, because we want Medium sized images and
+						# then we just use awk to get image URL.
+						FLICKR_TMP_URL=$(curl -s "http://api.flickr.com/services/rest/?method=flickr.photos.getSizes&api_key=$FLICKR_API_KEY&photo_id=$IMG_URL" | grep "Medium" | awk -F '"' '{print $8}')
+
+						# Now here we save in $TMP_TXT variable a div.
+						# In div we put image, and that image points to
+						# correct Flickr page.
+						TMP_TXT=$(echo '<div class="flickr_images"><a href="'$TMP_URL'"><img src="'$FLICKR_TMP_URL'" alt="'$IMG_URL'"></a></div>')
+
+						# In this part we change a line where is Flickr URL
+						# and we replace it with that <div> stuff what we
+						# created above. Eg. there will be no lines
+						# http://wwww.flickr.com/user/12345 anymore after
+						# this, because we overwrite it with <div> stuff.
+						TEXT=$(echo $TEXT | sed -e "s|$TMP_URL|$TMP_TXT|g")
+					done
+
 				fi
 
-				# First we use awk to remove first two lines, replace 
-				# \n to <br> and remove lines what starts with 
-				# url http://www.flickr.com/
-				TEXT=$(awk '{if( NR > 2 ) if( $0 !~ "^http://www.flickr.com/" ) printf "%s<br>", $0} END  {print ""}' $cur)
+				# Now we use sed to create http:// urls to links.
+				# We do NOT create links from URLs what have =" before them.
+				# This is beause we have already done img src="http:// stuff
+				# and of course we have <a href=" stuff in Flickr images too.
+				# So, we check every http:// texts if they do not have ="
+				# before them. Then we call sed and make them URLs. 
+				# This regexp of mine is crap, it makes spaces before http://
+				# part, so that is why there is three sed commands.
+				# This SHOULD be changed when I find better way. Until
+				# that, it seems to work -> it is good enough.
+				TEXT=$(echo $TEXT | sed -e 's|[^="]http[:]//[^ ]*|<a href="\0">\0</a>|g' | sed -e 's|<a href=" http| <a href="http|g' | sed -e 's|> http|>http|g')
 
-				# With sed we make links from all URLs.
-				echo $TEXT | sed -e "s|http[:]//[^ ]*|<a href=\"\0\">\0</a>|g" 
+				# And finally we have reached a point with no return!
+				# Errr... so we just echo our precious $TEXT variable.
+				echo $TEXT
 
 			# SHOW_FLICKR_IMAGES is false, so just show possible flicrk URLS
 			# like we do show normal URLs.
 			else
 				# Note! We add space before <br> because if user has added
-				# Flikr URLs on own line, they propably do not have space
+				# Flickr URLs on own line, they propably do not have space
 				# in the end and the next sed line will do not understand them
 				# correctly, eg. next word will be also a part of a link!
 				TEXT=$(awk '{if( NR > 2 ) printf "%s <br>", $0} END  {print ""}' $cur)
