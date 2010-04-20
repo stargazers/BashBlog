@@ -27,7 +27,7 @@ TITLE_FILE=blogtitle.txt
 CURRENT_PAGE=01-main/
 
 # How many blogtexts should be on one page?
-ITEMS_PER_PAGE=5
+ITEMS_PER_PAGE=3
 
 # By default we start browsing from first page.
 PAGE_NUM=1
@@ -91,6 +91,25 @@ create_pages()
 
 create_current_page()
 {
+	# Here we check if there really is page what is given.
+	# This is not necessary, if your server is configured well,
+	# because then it does not show files what it should not show,
+	# but this is just-in-case if your server is not configured well.
+	# If it is not and we do not check this, then if user gives
+	# manually page=something/ and if there is no directory something/
+	# then it might show files from the path where index.cgi is and
+	# that is not a good thing.
+	if [ ! -d $CURRENT_PAGE ]
+	then
+		echo '<h2 class="blogtext_header">'
+		echo 'Incorrect page'
+		echo '</h2>'
+		echo '<div class="blogtext">'
+		echo 'There is no page called '$CURRENT_PAGE
+		echo '</div>'
+		return
+	fi
+
 	# Get all files from this folder
 	cd $CURRENT_PAGE
 	PAGES=$(\ls -r *.txt)
