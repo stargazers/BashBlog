@@ -98,8 +98,9 @@ create_current_page()
 	# If it is not and we do not check this, then if user gives
 	# manually page=something/ and if there is no directory something/
 	# then it might show files from the path where index.cgi is and
-	# that is not a good thing.
-	if [ ! -d $CURRENT_PAGE ]
+	# that is not a good thing. We have to also check if there is a
+	# file $TITLE_FILE in that folder before we can show that folder.
+	if [ ! -d $CURRENT_PAGE ] || [ ! -f $CURRENT_PAGE/$TITLE_FILE ]
 	then
 		echo '<h2 class="blogtext_header">'
 		echo 'Incorrect page'
