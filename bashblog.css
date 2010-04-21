@@ -39,6 +39,18 @@ body
 	font-size: 60%;
 }
 
+.blogtext a:link, .blogtext a:visited
+{
+	text-decoration: underline;
+	color: blue;
+}
+
+.blogtext a:hover
+{
+	color: red;
+	text-decoration: none;
+}
+
 .blogtext
 {
 	font-family: "Arial", Georia, Sans-Serif;
@@ -71,7 +83,7 @@ body
 	text-align: center;
 }
 
-.page_browsing_area a:link, a:visited
+.page_browsing_area a:link, .page_browsing_area a:visited
 {
 	text-decoration: none;
 	color: black;

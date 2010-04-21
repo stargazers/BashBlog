@@ -72,6 +72,21 @@ create_pages()
 	# Get all subfolders
 	PAGES=$(\ls -F | grep "/")
 
+	i=0
+	for cur in $PAGES
+	do
+		# Count only pages what are meant to be visible
+		if [ -f $cur/$TITLE_FILE ]; then
+			let i=$i+1
+		fi
+	done
+
+	# If there is only one page, then do not create 
+	# top menu and add that page there. 
+	if [ "$i" == 1 ]; then
+		return
+	fi
+
 	echo '<div class="menu">'
 
 	for cur in $PAGES
