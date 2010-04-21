@@ -80,7 +80,7 @@ create_pages()
 		# in subfolder $cur. If there it is, then we
 		# add this folder as a subpage.
 		if [ -f $cur/$TITLE_FILE ]; then
-			echo '<a href="$0?page='$cur'">'
+			echo '<a href="'$0'?page='$cur'">'
 			cat $cur/$TITLE_FILE
 			echo '</a>'
 		fi
@@ -321,16 +321,16 @@ create_current_page()
 	# Should we give link "Newer"?
 	if [ "$PAGE_NUM" -gt 1 ]; then
 		let previous_page=$PAGE_NUM-1
-		echo '<a href="$0?page='$CURRENT_PAGE'&page_num='$previous_page'">'
+		echo '<a href="'$0'?page='$CURRENT_PAGE'&page_num='$previous_page'">'
 		echo '&lt;&lt;&lt Newer'
 	fi
 
     let i=$num_total-$var_first_to_show
 
 	# Should we give link "Older"?
-	if [ "$i" == "$ITEMS_PER_PAGE" ] || [ "$i" -gt "$ITEMS_PER_PAGE" ]; then
+	if [ "$i" -gt "$ITEMS_PER_PAGE" ]; then
 		let next_page=$PAGE_NUM+1
-		echo '<a href="$0?page='$CURRENT_PAGE'&page_num='$next_page'">'
+		echo '<a href="'$0'?page='$CURRENT_PAGE'&page_num='$next_page'">'
 		echo 'Older &gt;&gt;&gt;</a>'
 	fi
 
