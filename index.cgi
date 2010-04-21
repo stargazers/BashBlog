@@ -80,7 +80,7 @@ create_pages()
 		# in subfolder $cur. If there it is, then we
 		# add this folder as a subpage.
 		if [ -f $cur/$TITLE_FILE ]; then
-			echo '<a href="'$0'?page='$cur'">'
+			echo '<a href="$0?page='$cur'">'
 			cat $cur/$TITLE_FILE
 			echo '</a>'
 		fi
@@ -112,7 +112,9 @@ create_current_page()
 
 	# Get all files from this folder
 	cd $CURRENT_PAGE
-	PAGES=$(\ls -r *.txt)
+
+	# Only get files with filename format yyyy-mm-dd-hh-ii-ss.txt
+	PAGES=$(\ls -r ????-??-??-??-??-??.txt)
 
 	# How many blogtexts we have added to this page 
 	var_added_texts=0
@@ -126,19 +128,21 @@ create_current_page()
 		let num_total=$num_total+1
 	done
 	
-	# Remove one from total blogtexts, because one is blogtitle.txt
-	let num_total=$num_total-1
-
 	# Temporary counter
 	i=0
 
 	# Calculate what will be the first blogtext to show.
 	let var_first_to_show=$ITEMS_PER_PAGE*$PAGE_NUM
 	let var_first_to_show=$var_first_to_show-$ITEMS_PER_PAGE
-	let var_first_to_show=$var_first_to_show+1
 
 	for cur in $PAGES
 	do
+		# Reset the variable so we can test later if this 
+		# blogtext had any links to Flickr.
+		FLICKR_TMP_URL=""
+
+		# This variable is used to count if we should show
+		# links for changing pages.
 		let i=$i+1
 
 		# If temporary counter is NOT greater than index number
@@ -148,24 +152,57 @@ create_current_page()
 			continue;
 		fi
 
-		if [ $cur != "$TITLE_FILE" ]; then
-			let var_added_texts=$var_added_texts+1
+		# Count number of items what we have shown.
+		let var_added_texts=$var_added_texts+1
 
-			# Echo Blog header
-			echo '<h2 class="blogtext_header">'
-			head -n 1 $cur
-			echo "<br>"
-			echo '<span class="blogtext_header_date">'
-			echo $cur | awk -F '-' '{print $3"."$2"."$1" - "$4":"$5}'
-			echo '</span>'
-			echo '</h2>'
+		# Echo Blog header
+		echo '<h2 class="blogtext_header">'
+		head -n 1 $cur
+		echo "<br>"
+		echo '<span class="blogtext_header_date">'
+		echo $cur | awk -F '-' '{print $3"."$2"."$1" - "$4":"$5}'
+		echo '</span>'
+		echo '</h2>'
 
-			echo '<div class="blogtext">'
+		echo '<div class="blogtext">'
 
-			# If $SHOW_FLICKR_IMAGES is true, then we must check if
-			# there is lines where we have links to Flickr.
-			# Those lines are used ONLY if they are beginning of the line.
-			if [ "$SHOW_FLICKR_IMAGES" == "true" ]; then
+		# If $SHOW_FLICKR_IMAGES is true, then we must check if
+		# there is lines where we have links to Flickr.
+		# Those lines are used ONLY if they are beginning of the line.
+		if [ "$SHOW_FLICKR_IMAGES" == "true" ]; then
+
+			# This variable tells if .cache file is in use or not.
+			# This will be to value TRUE if there is .cache file
+			# and if that is newer than .txt file.
+			CACHE_IN_USE="FALSE"
+
+			# Here we test if there is .cache file for this blogtext.
+			# If there is and if it have newer timestamp than the
+			# .txt file have, then we have to use it, not the .txt file.
+			# This is because of Flickr API -calls. If we have once
+			# done Flickr API call to get image URL for links what points
+			# to Flickr, then we should NOT create it everytime when
+			# blog is reloaded. Instead we should generate .cache file
+			# and use that next time, if .txt file is not newer than the
+			# cache file in same directory.
+			if [ -f "$cur".cache ] 
+			then
+				# Is .cache newer than .txt?
+				NEWER_FILE=$( \ls $cur* -t | head -1 )
+
+				# If Cache is newer, then load cachefile to $TEXT
+				# variable, Othwerise just let CACHE_IN_USE unmodified
+				# so we use .txt instead.
+				if [ "$NEWER_FILE" == "$cur.cache" ]
+				then
+					TEXT=$(cat "$cur".cache)
+					CACHE_IN_USE="TRUE"
+				fi
+			fi
+
+			# If CACHE_IN_USE is not TRUE, then we need to check the
+			# whole .txt file, parse links from Flickr and so on.
+			if [ ! "$CACHE_IN_USE" == "TRUE" ]; then
 
 				# Try to search this blogtext if there is any lines
 				# what starts with http://www.flickr.com/ and if there
@@ -217,34 +254,48 @@ create_current_page()
 				# Now we use sed to create http:// urls to links.
 				# We do NOT create links from URLs what have =" before them.
 				# This is beause we have already done img src="http:// stuff
-				# and of course we have <a href=" stuff in Flickr images too.
-				# So, we check every http:// texts if they do not have ="
-				# before them. Then we call sed and make them URLs. 
-				# This regexp of mine is crap, it makes spaces before http://
-				# part, so that is why there is three sed commands.
-				# This SHOULD be changed when I find better way. Until
-				# that, it seems to work -> it is good enough.
+				# and of course we have <a href=" stuff in Flickr 
+				# images too. So, we check every http:// texts if they 
+				# do not have =" before them. Then we call sed and make 
+				# them URLs. 
+				# This regexp of mine is crap, it makes spaces 
+				# before http:// part, so that is why there is three 
+				# sed commands. This SHOULD be changed when I find 
+				# a better way. Until that, it seems to work -> it is 
+				# good enough. 
 				TEXT=$(echo $TEXT | sed -e 's|[^="]http[:]//[^ ]*|<a href="\0">\0</a>|g' | sed -e 's|<a href=" http| <a href="http|g' | sed -e 's|> http|>http|g')
 
-				# And finally we have reached a point with no return!
-				# Errr... so we just echo our precious $TEXT variable.
-				echo $TEXT
+			fi 
 
-			# SHOW_FLICKR_IMAGES is false, so just show possible flicrk URLS
-			# like we do show normal URLs.
-			else
-				# Note! We add space before <br> because if user has added
-				# Flickr URLs on own line, they propably do not have space
-				# in the end and the next sed line will do not understand them
-				# correctly, eg. next word will be also a part of a link!
-				TEXT=$(awk '{if( NR > 2 ) printf "%s <br>", $0} END  {print ""}' $cur)
+			# And finally we have reached a point with no return!
+			# Errr... so we just echo our precious $TEXT variable.
+			echo $TEXT
 
-				# With sed we make links from all URLs.
-				echo $TEXT | sed -e "s|http[:]//[^ ]*|<a href=\"\0\">\0</a>|g" 
+			# If we have something other than empty string in variable
+			# $FLICKR_TMP_URL, then we know that there was Flickr images
+			# in this blogtext what required Flickr API calls.
+			# We also know that cache file was not already in use.
+			# Now we create .cache file for this, so next time we do not
+			# call Flickr API anymore (we call only if .txt file timestamp
+			# is newer than .cache file timestamp).
+			if [ "$FLICKR_TMP_URL" != "" ]; then
+				echo $TEXT > $cur.cache
 			fi
 
-			echo '</div>'
+		# SHOW_FLICKR_IMAGES is false, so just show possible flicrk URLS
+		# like we do show normal URLs.
+		else
+			# Note! We add space before <br> because if user has added
+			# Flickr URLs on own line, they propably do not have space
+			# in the end and the next sed line will do not understand them
+			# correctly, eg. next word will be also a part of a link!
+			TEXT=$(awk '{if( NR > 2 ) printf "%s <br>", $0} END  {print ""}' $cur)
+
+			# With sed we make links from all URLs.
+			echo $TEXT | sed -e "s|http[:]//[^ ]*|<a href=\"\0\">\0</a>|g" 
 		fi
+
+		echo '</div>'
 
 		# If we have added already enough blogtexts to this page,
 		# then we quit this while loop just now.
@@ -267,20 +318,20 @@ create_current_page()
 
 	echo '<div class="page_browsing_area">'
 
-	# Should we give link "Previous"?
+	# Should we give link "Newer"?
 	if [ "$PAGE_NUM" -gt 1 ]; then
 		let previous_page=$PAGE_NUM-1
-		echo '<a href="'$0'?page='$CURRENT_PAGE'&page_num='$previous_page'">'
-		echo '&lt;&lt;&lt Previous'
+		echo '<a href="$0?page='$CURRENT_PAGE'&page_num='$previous_page'">'
+		echo '&lt;&lt;&lt Newer'
 	fi
 
     let i=$num_total-$var_first_to_show
 
-	# Should we give link "Next"?
+	# Should we give link "Older"?
 	if [ "$i" == "$ITEMS_PER_PAGE" ] || [ "$i" -gt "$ITEMS_PER_PAGE" ]; then
 		let next_page=$PAGE_NUM+1
-		echo '<a href="'$0'?page='$CURRENT_PAGE'&page_num='$next_page'">'
-		echo 'Next &gt;&gt;&gt;</a>'
+		echo '<a href="$0?page='$CURRENT_PAGE'&page_num='$next_page'">'
+		echo 'Older &gt;&gt;&gt;</a>'
 	fi
 
 	echo '</div>'
