@@ -70,7 +70,7 @@ create_main()
 create_pages()
 {
 	# Get all subfolders
-	PAGES=$(\ls -F | grep "/")
+	PAGES=$(\ls -d */)
 
 	i=0
 	for cur in $PAGES
